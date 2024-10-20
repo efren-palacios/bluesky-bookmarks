@@ -9,9 +9,16 @@ h1 {
   margin-bottom: 10px;
 }
 
+.bookmarks-container {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 .bookmark {
-  border-bottom: 1px solid #ccc;
-  padding: 10px 0;
+  margin-bottom: 10px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 .bookmark p {
@@ -22,11 +29,29 @@ h1 {
   color: #666;
 }
 
-#clear-bookmarks {
+.post-link {
+  display: inline-block;
+  margin-top: 5px;
+  color: #1da1f2;
+  text-decoration: none;
+}
+
+.post-link:hover {
+  text-decoration: underline;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 10px;
   margin-top: 10px;
-  padding: 5px 10px;
-  background-color: #f44336;
+  background-color: #1da1f2;
   color: white;
   border: none;
+  border-radius: 5px;
   cursor: pointer;
+}
+
+button:hover {
+  background-color: #0c85d0;
 }

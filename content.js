@@ -94,8 +94,27 @@ function toggleBookmark(uniqueId, bookmarkBtn) {
   
   const postContent = contentElement ? contentElement.textContent.trim() : 'No content available';
   
-  const authorElement = post.querySelector('a[href^="/profile/"]');
-  const avatar = post.querySelector('img[draggable="false"]');
+  // Find the author information
+  const avatarElement = post.querySelector('a[aria-label$="\'s avatar"]');
+  const displayNameElement = post.querySelector('div[aria-label] a[href^="/profile/"]');
+  const handleElement = post.querySelector('div[aria-label] + div[aria-label]');
+
+  let displayName = 'Unknown User';
+  let handle = 'unknown';
+  let avatar = '';
+
+  if (avatarElement) {
+    displayName = avatarElement.getAttribute('aria-label').replace(/'s avatar$/, '');
+    avatar = avatarElement.querySelector('img')?.src || '';
+  }
+
+  if (displayNameElement) {
+    displayName = displayNameElement.textContent.trim();
+  }
+
+  if (handleElement) {
+    handle = handleElement.getAttribute('aria-label');
+  }
 
   // Get the URL from the og:url meta tag
   const ogUrlMeta = document.querySelector('meta[property="og:url"]');
@@ -104,9 +123,9 @@ function toggleBookmark(uniqueId, bookmarkBtn) {
   const bookmarkData = {
     content: postContent,
     date: new Date().toISOString(),
-    displayName: authorElement ? authorElement.textContent.trim() : 'Unknown User',
-    handle: authorElement ? authorElement.getAttribute('href').split('/').pop() : 'unknown',
-    avatar: avatar ? avatar.src : '',
+    displayName: displayName,
+    handle: handle,
+    avatar: avatar,
     url: postUrl // Add the URL to the bookmark data
   };
 
