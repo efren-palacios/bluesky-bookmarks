@@ -1,0 +1,32 @@
+body {
+  width: 300px;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+}
+
+h1 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.bookmark {
+  border-bottom: 1px solid #ccc;
+  padding: 10px 0;
+}
+
+.bookmark p {
+  margin: 0 0 5px 0;
+}
+
+.bookmark small {
+  color: #666;
+}
+
+#clear-bookmarks {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
