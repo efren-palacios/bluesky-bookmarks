@@ -16,6 +16,11 @@ function initializeExtension() {
   chrome.runtime.sendMessage({ action: "getBookmarks" }, (bookmarks) => {
     localBookmarks = bookmarks || {};
     console.log('Loaded bookmarks:', localBookmarks);
+    
+    // Check for existing main post and add bookmark button if found
+    const existingMainPost = document.querySelector('[data-testid^="postThreadItem-by-"]');
+    if (existingMainPost) addBookmarkButton(existingMainPost);
+    
     setupMutationObserver();
     addBookmarksMenuItem();
   });
@@ -29,8 +34,8 @@ function setupMutationObserver() {
     for (let mutation of mutations) {
       for (let node of mutation.addedNodes) {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          const posts = node.querySelectorAll('[data-testid^="postThreadItem-"]');
-          posts.forEach(addBookmarkButton);
+          const mainPost = node.querySelector('[data-testid^="postThreadItem-by-"]');
+          if (mainPost) addBookmarkButton(mainPost);
         }
       }
     }
@@ -40,23 +45,19 @@ function setupMutationObserver() {
 }
 
 function addBookmarkButton(post) {
-  const postId = post.getAttribute('data-testid').split('-')[1];
-  const authorHandle = post.querySelector('a[href^="/profile/"]')?.getAttribute('href')?.split('/').pop();
-  const uniqueId = `${authorHandle}-${postId}`;
+  if (post.querySelector('.bookmark-btn')) return; // Button already exists
 
-  if (!post.querySelector(`.bookmark-btn-${uniqueId}`)) {
-    const interactionsBar = post.querySelector('.css-175oi2r[style*="flex-direction: row; justify-content: space-between; align-items: center;"]');
-    if (interactionsBar) {
-      const bookmarkBtn = createBookmarkButton(uniqueId);
-      interactionsBar.insertBefore(bookmarkBtn, interactionsBar.lastElementChild);
-      updateBookmarkButton(bookmarkBtn, !!localBookmarks[uniqueId]);
-    }
+  const interactionsBar = post.querySelector('.css-175oi2r[style*="flex-direction: row; justify-content: space-between; align-items: center;"]');
+  if (interactionsBar) {
+    const bookmarkBtn = createBookmarkButton();
+    interactionsBar.insertBefore(bookmarkBtn, interactionsBar.lastElementChild);
+    updateBookmarkButton(bookmarkBtn, isPostBookmarked(post));
   }
 }
 
-function createBookmarkButton(uniqueId) {
+function createBookmarkButton() {
   const bookmarkBtn = document.createElement('div');
-  bookmarkBtn.className = `css-175oi2r bookmark-btn bookmark-btn-${uniqueId}`;
+  bookmarkBtn.className = 'css-175oi2r bookmark-btn';
   bookmarkBtn.style.cssText = 'align-items: center;';
   bookmarkBtn.innerHTML = `
     <div aria-label="Bookmark" tabindex="0" class="css-175oi2r r-1loqt21 r-1otgn73" style="gap: 4px; border-radius: 999px; flex-direction: row; justify-content: center; align-items: center; overflow: hidden; padding: 5px;">
@@ -65,7 +66,6 @@ function createBookmarkButton(uniqueId) {
       </svg>
     </div>
   `;
-  bookmarkBtn.setAttribute('data-unique-id', uniqueId);
   return bookmarkBtn;
 }
 
@@ -76,72 +76,126 @@ function handleBookmarkClick(event) {
   event.preventDefault();
   event.stopPropagation();
 
-  const uniqueId = bookmarkBtn.getAttribute('data-unique-id');
-  toggleBookmark(uniqueId, bookmarkBtn);
+  const post = bookmarkBtn.closest('[data-testid^="postThreadItem-"]');
+  toggleBookmark(post, bookmarkBtn);
 }
 
-function toggleBookmark(uniqueId, bookmarkBtn) {
+function toggleBookmark(post, bookmarkBtn) {
   if (!isExtensionContextValid()) {
     console.error('Extension context invalidated. Please refresh the page.');
     showToast('Extension error. Please refresh the page.');
     return;
   }
 
-  const post = bookmarkBtn.closest('[data-testid^="postThreadItem-"]');
-  const contentElement = post.querySelector('[data-word-wrap="1"]') || 
-                         post.querySelector('.css-1xnzce8') ||
-                         post.querySelector('[style*="font-size: 18.75px"]');
-  
-  const postContent = contentElement ? contentElement.textContent.trim() : 'No content available';
-  
-  // Find the author information
-  const avatarElement = post.querySelector('a[aria-label$="\'s avatar"]');
-  const displayNameElement = post.querySelector('div[aria-label] a[href^="/profile/"]');
-  const handleElement = post.querySelector('div[aria-label] + div[aria-label]');
-
-  let displayName = 'Unknown User';
-  let handle = 'unknown';
-  let avatar = '';
-
-  if (avatarElement) {
-    displayName = avatarElement.getAttribute('aria-label').replace(/'s avatar$/, '');
-    avatar = avatarElement.querySelector('img')?.src || '';
+  const postOptionsBtn = post.querySelector('[data-testid="postDropdownBtn"]');
+  if (!postOptionsBtn) {
+    console.error('Post options button not found.');
+    showToast('Error: Could not find post options.');
+    return;
   }
 
-  if (displayNameElement) {
-    displayName = displayNameElement.textContent.trim();
+  postOptionsBtn.click();
+
+  setTimeout(() => {
+    const embedOption = document.querySelector('[data-testid="postDropdownEmbedBtn"]');
+    if (embedOption) {
+      embedOption.click();
+      setTimeout(() => handleEmbedOrShare(post, bookmarkBtn), 500);
+    } else {
+      showToast("Bookmarking is only available for posts with embed enabled.");
+      closeShareDialog();
+    }
+  }, 500);
+}
+
+function handleEmbedOrShare(post, bookmarkBtn) {
+  // First, look for the embed input
+  const embedInput = document.querySelector('input[placeholder="Embed HTML code"]');
+  if (embedInput) {
+    getEmbedCode(post, bookmarkBtn);
+    return;
   }
 
-  if (handleElement) {
-    handle = handleElement.getAttribute('aria-label');
+  // If embed input is not found, show a toast and close the dialog
+  showToast("Bookmarking is only available for posts with embed enabled.");
+  closeShareDialog();
+}
+
+function getEmbedCode(post, bookmarkBtn) {
+  const embedInput = document.querySelector('input[placeholder="Embed HTML code"]');
+  if (embedInput) {
+    const embedCode = embedInput.value;
+    const postUrl = getPostUrl(post);
+
+    if (embedCode && postUrl) {
+      const bookmarkData = {
+        embedCode: embedCode,
+        date: new Date().toISOString(),
+        url: postUrl
+      };
+
+      saveBookmark(bookmarkData, post, bookmarkBtn);
+    } else {
+      console.error('Embed code or post URL is undefined.');
+      showToast('Error: Could not get post data.');
+      closeShareDialog();
+    }
+  } else {
+    console.error('Embed input not found.');
+    showToast('Error: Could not find post data.');
+    closeShareDialog();
   }
+}
 
-  // Get the URL from the og:url meta tag
-  const ogUrlMeta = document.querySelector('meta[property="og:url"]');
-  const postUrl = ogUrlMeta ? ogUrlMeta.getAttribute('content') : '';
+function getPostLink(post, bookmarkBtn) {
+  navigator.clipboard.readText()
+    .then(text => {
+      if (text.startsWith('https://bsky.app/')) {
+        const bookmarkData = {
+          url: text,
+          date: new Date().toISOString(),
+          content: post.querySelector('[data-testid="postContent"]')?.textContent || 'No content available',
+          authorName: post.querySelector('[data-testid="profileName"]')?.textContent || 'Unknown User',
+          authorHandle: post.querySelector('[data-testid="profileHandle"]')?.textContent || '@unknown'
+        };
+        saveBookmark(bookmarkData, post, bookmarkBtn);
+      } else {
+        console.error('Clipboard does not contain a valid Bluesky URL');
+        showToast('Error: Could not get post link.');
+        closeShareDialog();
+      }
+    })
+    .catch(err => {
+      console.error('Failed to read clipboard contents: ', err);
+      showToast('Error: Could not get post link.');
+      closeShareDialog();
+    });
+}
 
-  const bookmarkData = {
-    content: postContent,
-    date: new Date().toISOString(),
-    displayName: displayName,
-    handle: handle,
-    avatar: avatar,
-    url: postUrl // Add the URL to the bookmark data
-  };
+function saveBookmark(bookmarkData, post, bookmarkBtn) {
+  if (!bookmarkData || !bookmarkData.url) {
+    console.error('Invalid bookmark data');
+    showToast('Error: Could not save bookmark.');
+    closeShareDialog();
+    return;
+  }
 
   chrome.runtime.sendMessage({ action: "getBookmarks" }, (bookmarks) => {
     if (chrome.runtime.lastError) {
       console.error('Error getting bookmarks:', chrome.runtime.lastError);
       showToast('Error retrieving bookmarks. Please refresh the page.');
+      closeShareDialog();
       return;
     }
 
     const updatedBookmarks = { ...bookmarks };
-    if (updatedBookmarks[uniqueId]) {
-      delete updatedBookmarks[uniqueId];
+    const postUrl = bookmarkData.url;
+
+    if (isPostBookmarked(post)) {
+      delete updatedBookmarks[postUrl];
       showToast('Bookmark removed');
     } else {
-      updatedBookmarks[uniqueId] = bookmarkData;
+      updatedBookmarks[postUrl] = bookmarkData;
       showToast('Bookmark added');
     }
 
@@ -149,14 +203,16 @@ function toggleBookmark(uniqueId, bookmarkBtn) {
       if (chrome.runtime.lastError) {
         console.error('Error setting bookmarks:', chrome.runtime.lastError);
         showToast('Error saving bookmark. Please refresh the page.');
+        closeShareDialog();
         return;
       }
       if (response && response.success) {
         localBookmarks = updatedBookmarks;
-        updateBookmarkButton(bookmarkBtn, !!updatedBookmarks[uniqueId]);
+        updateBookmarkButton(bookmarkBtn, !isPostBookmarked(post));
       } else {
         showToast('Error saving bookmark. Please try again.');
       }
+      closeShareDialog();
     });
   });
 }
@@ -167,6 +223,22 @@ function updateBookmarkButton(button, isBookmarked) {
     svg.style.color = 'rgb(32, 139, 254)'; // Blue color
   } else {
     svg.style.color = 'rgb(120, 142, 165)'; // Original color
+  }
+}
+
+function isPostBookmarked(post) {
+  const postUrl = getPostUrl(post);
+  return Object.values(localBookmarks).some(bookmark => bookmark.url === postUrl);
+}
+
+function getPostUrl(post) {
+  const authorHandle = post.querySelector('a[href^="/profile/"]')?.getAttribute('href')?.split('/').pop();
+  const postId = post.getAttribute('data-testid').split('-')[1];
+  if (authorHandle && postId) {
+    return `https://bsky.app/profile/${authorHandle}/post/${postId}`;
+  } else {
+    console.error('Could not construct post URL');
+    return null;
   }
 }
 
@@ -183,7 +255,6 @@ function addBookmarksMenuItem() {
   const sidebarNav = document.querySelector('.css-175oi2r.r-c4unlt.r-pgf20v.r-1rnoaur.r-1xcajam.r-1ki14p2.r-1w88a7h');
   if (sidebarNav && !document.querySelector('#bookmarks-menu-item')) {
     const bookmarksMenuItem = createBookmarksMenuItem();
-    // Insert the Bookmarks menu item before the Settings menu item
     const settingsMenuItem = sidebarNav.querySelector('a[href="/settings"]');
     if (settingsMenuItem) {
       sidebarNav.insertBefore(bookmarksMenuItem, settingsMenuItem);
@@ -224,6 +295,33 @@ function createBookmarksMenuItem() {
   });
 
   return bookmarksMenuItem;
+}
+
+function closeShareDialog() {
+  const closeButtonSelectors = [
+    'button[aria-label="Close active dialog"]',
+    'button[aria-label="Close"]',
+    '[data-testid="closeButton"]',
+    'button[aria-label="Close dialog"]'
+  ];
+
+  for (let selector of closeButtonSelectors) {
+    const closeButton = document.querySelector(selector);
+    if (closeButton) {
+      closeButton.click();
+      console.log(`Clicked close button: ${selector}`);
+      return;
+    }
+  }
+
+  const dialogs = document.querySelectorAll('[role="dialog"], [role="menu"]');
+  if (dialogs.length > 0) {
+    console.log('No close button found. Attempting to close dialogs by clicking outside.');
+    document.body.click();
+    return;
+  }
+
+  console.log('No dialogs or close buttons found to close.');
 }
 
 // Initialize the extension

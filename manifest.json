@@ -4,7 +4,10 @@
   "version": "1.0",
   "description": "Bookmark your favorite Bluesky posts",
   "permissions": ["storage", "activeTab", "tabs"],
-  "host_permissions": ["https://*.bsky.app/*"],
+  "host_permissions": [
+    "https://*.bsky.app/*",
+    "https://embed.bsky.app/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
