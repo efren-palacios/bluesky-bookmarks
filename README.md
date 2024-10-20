@@ -1,6 +1,6 @@
 # Bluesky Bookmarker
 
-![Bluesky Bookmarker Icon](images/icon128.png){: style="max-width: 128px; max-height: 128px;" }
+![Bluesky Bookmarker Icon](images/icon128.png)
 
 ## Overview
 
