@@ -9,6 +9,13 @@
 <body>
     <div class="bookmarks-page">
         <h1>Your Bookmarks</h1>
+        <div class="bookmarks-controls">
+            <select id="sort-select">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+            </select>
+            <button id="clear-all-btn">Clear All</button>
+        </div>
         <div id="bookmarks-list"></div>
     </div>
     <script src="bookmarks.js"></script>

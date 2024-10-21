@@ -55,3 +55,18 @@ button {
 button:hover {
   background-color: #0c85d0;
 }
+
+#sort-select {
+  margin-bottom: 10px;
+  padding: 5px;
+  width: 100%;
+  background-color: #1da1f2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+#sort-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.5);
+}

@@ -173,3 +173,85 @@ body {
   display: flex;
   justify-content: space-between;
 }
+
+/* Styles for the bookmark menu item */
+#bookmarks-menu-item {
+  /* Default styles for dark mode */
+  background-color: rgb(22, 30, 39);
+  color: rgb(241, 243, 245);
+}
+
+/* Media query for light mode */
+@media (prefers-color-scheme: light) {
+  #bookmarks-menu-item {
+    background-color: rgb(200, 200, 200); /* Darker gray for light mode */
+    color: rgb(0, 0, 0); /* Black text for better contrast */
+  }
+
+  #bookmarks-menu-item:hover {
+    background-color: rgb(180, 180, 180); /* Even darker on hover */
+  }
+
+  #bookmarks-menu-item svg {
+    color: rgb(0, 0, 0); /* Black icon for better visibility */
+  }
+}
+
+/* Add this to your existing styles.css */
+#sort-select {
+  margin-bottom: 20px;
+  padding: 10px;
+  font-size: 16px;
+  background-color: #1e2937;
+  color: #f1f3f5;
+  border: 1px solid #2e4052;
+  border-radius: 5px;
+  width: 100%;
+}
+
+#sort-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(32, 139, 254, 0.5);
+}
+
+/* Add these new styles */
+.bookmarks-controls {
+  display: flex;
+  margin-bottom: 20px;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+#clear-all-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  max-width: 100px;
+}
+
+#clear-all-btn:hover {
+  background-color: #c0392b;
+}
+
+/* Update this existing style */
+.remove-bookmark-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #e74c3c;
+  font-size: 14px;
+  padding: 5px;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.remove-bookmark-btn:hover {
+  background-color: rgba(231, 76, 60, 0.1);
+}

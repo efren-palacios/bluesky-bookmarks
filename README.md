@@ -1,4 +1,4 @@
-# Bluesky Bookmarker
+# Bluesky Bookmarker Chrome Extension
 
 ![Bluesky Bookmarker Icon](images/icon128.png)
 
@@ -86,3 +86,7 @@ To modify the extension:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+[MIT License](LICENSE)

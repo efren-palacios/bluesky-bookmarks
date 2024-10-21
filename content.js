@@ -1,5 +1,8 @@
 let localBookmarks = {};
 
+// At the beginning of the file, add:
+const extensionPrefix = 'bsky-bookmarker-';
+
 function isExtensionContextValid() {
   return typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
 }
@@ -17,9 +20,8 @@ function initializeExtension() {
     localBookmarks = bookmarks || {};
     console.log('Loaded bookmarks:', localBookmarks);
     
-    // Check for existing main post and add bookmark button if found
-    const existingMainPost = document.querySelector('[data-testid^="postThreadItem-by-"]');
-    if (existingMainPost) addBookmarkButton(existingMainPost);
+    // Check for existing posts and add bookmark buttons
+    checkAndAddBookmarkButton(document.body);
     
     setupMutationObserver();
     addBookmarksMenuItem();
@@ -31,46 +33,66 @@ function initializeExtension() {
 
 function setupMutationObserver() {
   const observer = new MutationObserver((mutations) => {
-    for (let mutation of mutations) {
-      for (let node of mutation.addedNodes) {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          const mainPost = node.querySelector('[data-testid^="postThreadItem-by-"]');
-          if (mainPost) addBookmarkButton(mainPost);
-        }
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            checkAndAddBookmarkButton(node);
+          }
+        });
       }
-    }
+    });
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
-function addBookmarkButton(post) {
-  if (post.querySelector('.bookmark-btn')) return; // Button already exists
+function checkAndAddBookmarkButton(node) {
+  // Check if the node itself is a post or contains posts
+  const posts = [node, ...node.querySelectorAll('[data-testid^="postThreadItem-"]')];
+  
+  posts.forEach((post) => {
+    if (post.getAttribute('data-testid')?.startsWith('postThreadItem-')) {
+      const shareButton = post.querySelector('[data-testid="shareBtn"]');
+      if (shareButton && !post.querySelector(`.${extensionPrefix}bookmark-btn`)) {
+        addBookmarkButton(post);
+      }
+    }
+  });
+}
 
-  const interactionsBar = post.querySelector('.css-175oi2r[style*="flex-direction: row; justify-content: space-between; align-items: center;"]');
-  if (interactionsBar) {
+function addBookmarkButton(post) {
+  const interactionBar = post.querySelector('.css-175oi2r[style*="flex-direction: row; justify-content: space-between; align-items: center;"]');
+  if (interactionBar && !interactionBar.querySelector(`.${extensionPrefix}bookmark-btn`)) {
     const bookmarkBtn = createBookmarkButton();
-    interactionsBar.insertBefore(bookmarkBtn, interactionsBar.lastElementChild);
+    const lastChild = interactionBar.lastElementChild;
+    interactionBar.insertBefore(bookmarkBtn, lastChild);
     updateBookmarkButton(bookmarkBtn, isPostBookmarked(post));
   }
 }
 
 function createBookmarkButton() {
+  const bookmarkBtnContainer = document.createElement('div');
+  bookmarkBtnContainer.className = 'css-175oi2r';
+  bookmarkBtnContainer.style.cssText = 'align-items: center;';
+
   const bookmarkBtn = document.createElement('div');
-  bookmarkBtn.className = 'css-175oi2r bookmark-btn';
-  bookmarkBtn.style.cssText = 'align-items: center;';
+  bookmarkBtn.className = `${extensionPrefix}bookmark-btn css-175oi2r r-1loqt21 r-1otgn73`;
+  bookmarkBtn.setAttribute('aria-label', 'Bookmark');
+  bookmarkBtn.setAttribute('tabindex', '0');
+  bookmarkBtn.style.cssText = 'gap: 4px; border-radius: 999px; flex-direction: row; justify-content: center; align-items: center; overflow: hidden; padding: 5px;';
   bookmarkBtn.innerHTML = `
-    <div aria-label="Bookmark" tabindex="0" class="css-175oi2r r-1loqt21 r-1otgn73" style="gap: 4px; border-radius: 999px; flex-direction: row; justify-content: center; align-items: center; overflow: hidden; padding: 5px;">
-      <svg fill="none" width="22" viewBox="0 0 24 24" height="22" style="color: rgb(120, 142, 165);">
-        <path fill="currentColor" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-      </svg>
-    </div>
+    <svg fill="none" width="22" viewBox="0 0 24 24" height="22" style="color: rgb(120, 142, 165); pointer-events: none;">
+      <path fill="currentColor" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+    </svg>
   `;
-  return bookmarkBtn;
+
+  bookmarkBtnContainer.appendChild(bookmarkBtn);
+  return bookmarkBtnContainer;
 }
 
 function handleBookmarkClick(event) {
-  const bookmarkBtn = event.target.closest('.bookmark-btn');
+  const bookmarkBtn = event.target.closest(`.${extensionPrefix}bookmark-btn`);
   if (!bookmarkBtn) return;
 
   event.preventDefault();
@@ -109,14 +131,12 @@ function toggleBookmark(post, bookmarkBtn) {
 }
 
 function handleEmbedOrShare(post, bookmarkBtn) {
-  // First, look for the embed input
   const embedInput = document.querySelector('input[placeholder="Embed HTML code"]');
   if (embedInput) {
     getEmbedCode(post, bookmarkBtn);
     return;
   }
 
-  // If embed input is not found, show a toast and close the dialog
   showToast("Bookmarking is only available for posts with embed enabled.");
   closeShareDialog();
 }
@@ -208,7 +228,7 @@ function saveBookmark(bookmarkData, post, bookmarkBtn) {
       }
       if (response && response.success) {
         localBookmarks = updatedBookmarks;
-        updateBookmarkButton(bookmarkBtn, !isPostBookmarked(post));
+        updateBookmarkButton(bookmarkBtn, updatedBookmarks[postUrl] !== undefined);
       } else {
         showToast('Error saving bookmark. Please try again.');
       }
@@ -244,7 +264,8 @@ function getPostUrl(post) {
 
 function showToast(message) {
   const toast = document.createElement('div');
-  toast.className = 'toast';
+  toast.className = `${extensionPrefix}toast`;
+  toast.style.cssText = 'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: #fff; padding: 10px 20px; border-radius: 5px; z-index: 10000;';
   toast.textContent = message;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
