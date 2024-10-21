@@ -255,3 +255,16 @@ body {
 .remove-bookmark-btn:hover {
   background-color: rgba(231, 76, 60, 0.1);
 }
+
+/* New classes for light theme */
+.theme--light a#bookmarks-menu-item > * > * > * {        
+    fill: black;    
+}
+
+.theme--light a#bookmarks-menu-item > * {
+    color: black !important;
+}
+
+.theme--light a#bookmarks-menu-item {
+    background: transparent;
+}

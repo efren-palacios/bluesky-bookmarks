@@ -25,6 +25,7 @@ function initializeExtension() {
     
     setupMutationObserver();
     addBookmarksMenuItem();
+    adjustFeedTabsPosition(); // Add this line
   });
 
   // Set up event delegation for bookmark clicks
@@ -343,6 +344,24 @@ function closeShareDialog() {
   }
 
   console.log('No dialogs or close buttons found to close.');
+}
+
+function adjustFeedTabsPosition() {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        const feedTabs = document.querySelector('[data-testid="homeScreenFeedTabs"]');
+        if (feedTabs) {
+          const parentElement = feedTabs.closest('.css-175oi2r[style*="left: calc(50% - 300px)"]');
+          if (parentElement) {
+            parentElement.style.left = 'calc(50% - 283px)';
+          }
+        }
+      }
+    });
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 // Initialize the extension

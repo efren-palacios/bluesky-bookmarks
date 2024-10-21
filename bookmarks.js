@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const bookmarksList = document.getElementById('bookmarks-list');
   const sortSelect = document.getElementById('sort-select');
   const clearAllBtn = document.getElementById('clear-all-btn');
+  const noBookmarksMessage = document.getElementById('no-bookmarks-message');
+  const bookmarksControls = document.getElementById('bookmarks-controls');
 
   function renderBookmarks(bookmarks, sortOrder) {
     const sortedBookmarks = Object.entries(bookmarks).sort((a, b) => {
@@ -11,44 +13,53 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     bookmarksList.innerHTML = ''; // Clear existing bookmarks
-    sortedBookmarks.forEach(([id, data]) => {
-      const bookmarkElement = document.createElement('div');
-      bookmarkElement.className = 'bookmark-item';
-      
-      // Create a container for the embed code
-      const embedContainer = document.createElement('div');
-      embedContainer.className = 'embed-container';
-      embedContainer.innerHTML = data.embedCode;
 
-      // Create a container for the remove bookmark button
-      const actionContainer = document.createElement('div');
-      actionContainer.className = 'bookmark-actions';
-      
-      // Create the remove bookmark button
-      const removeBookmarkBtn = document.createElement('button');
-      removeBookmarkBtn.className = 'remove-bookmark-btn';
-      removeBookmarkBtn.setAttribute('data-id', id);
-      removeBookmarkBtn.innerHTML = `
-        <svg fill="none" width="22" viewBox="0 0 24 24" height="22">
-          <path fill="currentColor" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-        </svg>
-        Remove Bookmark
-      `;
+    if (sortedBookmarks.length === 0) {
+      noBookmarksMessage.style.display = 'block';
+      bookmarksControls.style.display = 'none';
+    } else {
+      noBookmarksMessage.style.display = 'none';
+      bookmarksControls.style.display = 'flex';
 
-      // Append elements
-      actionContainer.appendChild(removeBookmarkBtn);
-      bookmarkElement.appendChild(embedContainer);
-      bookmarkElement.appendChild(actionContainer);
-      bookmarksList.appendChild(bookmarkElement);
-    });
+      sortedBookmarks.forEach(([id, data]) => {
+        const bookmarkElement = document.createElement('div');
+        bookmarkElement.className = 'bookmark-item';
+        
+        // Create a container for the embed code
+        const embedContainer = document.createElement('div');
+        embedContainer.className = 'embed-container';
+        embedContainer.innerHTML = data.embedCode;
 
-    // Add event listeners to remove bookmark buttons
-    document.querySelectorAll('.remove-bookmark-btn').forEach(btn => {
-      btn.addEventListener('click', handleRemoveBookmark);
-    });
+        // Create a container for the remove bookmark button
+        const actionContainer = document.createElement('div');
+        actionContainer.className = 'bookmark-actions';
+        
+        // Create the remove bookmark button
+        const removeBookmarkBtn = document.createElement('button');
+        removeBookmarkBtn.className = 'remove-bookmark-btn';
+        removeBookmarkBtn.setAttribute('data-id', id);
+        removeBookmarkBtn.innerHTML = `
+          <svg fill="none" width="22" viewBox="0 0 24 24" height="22">
+            <path fill="currentColor" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+          </svg>
+          Remove Bookmark
+        `;
 
-    // Initialize embeds
-    initializeEmbeds();
+        // Append elements
+        actionContainer.appendChild(removeBookmarkBtn);
+        bookmarkElement.appendChild(embedContainer);
+        bookmarkElement.appendChild(actionContainer);
+        bookmarksList.appendChild(bookmarkElement);
+      });
+
+      // Add event listeners to remove bookmark buttons
+      document.querySelectorAll('.remove-bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', handleRemoveBookmark);
+      });
+
+      // Initialize embeds
+      initializeEmbeds();
+    }
   }
 
   function loadAndRenderBookmarks(sortOrder) {

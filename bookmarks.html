@@ -9,7 +9,10 @@
 <body>
     <div class="bookmarks-page">
         <h1>Your Bookmarks</h1>
-        <div class="bookmarks-controls">
+        <div id="no-bookmarks-message" style="display: none;">
+            <p>You don't have any bookmarks yet.</p>
+        </div>
+        <div id="bookmarks-controls" class="bookmarks-controls" style="display: none;">
             <select id="sort-select">
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
