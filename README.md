@@ -11,8 +11,10 @@ Bluesky Bookmarker is a Chrome extension that allows users to bookmark posts on 
 - Bookmark Bluesky posts with a single click
 - View bookmarked posts in a popup window
 - Manage bookmarks on a dedicated bookmarks page
-- Go directly to bookmarked posts
-- Remove bookmarks as needed
+- Sort bookmarks by newest or oldest first
+- Remove individual bookmarks or clear all bookmarks at once
+- Supports both light and dark themes
+- Adjusts the layout of Bluesky's feed tabs for better visibility
 
 ## Project Structure
 
@@ -37,37 +39,22 @@ Bluesky Bookmarker is a Chrome extension that allows users to bookmark posts on 
 
 1. Navigate to https://bsky.app.
 2. Click the Bluesky Bookmarker extension icon to view your bookmarks in a popup.
-3. On any Bluesky post, click the bookmark icon to save or remove a bookmark.
+3. On any Bluesky post, click the bookmark icon next to the share button to save or remove a bookmark.
 4. Click "View All Bookmarks" in the popup to open the full bookmarks page.
+5. On the bookmarks page, you can:
+   - Sort bookmarks by newest or oldest first
+   - Remove individual bookmarks
+   - Clear all bookmarks at once
 
-## File Descriptions
+## New Features and Improvements
 
-### manifest.json
-Defines the extension's properties, permissions, and scripts.
-
-### popup.html
-The HTML structure for the extension's popup, displaying a list of bookmarks and a button to view all bookmarks.
-
-### popup.js
-Handles the functionality of the popup, including fetching and displaying bookmarks, and opening the full bookmarks page.
-
-### popup.css
-Styles the popup for a clean and user-friendly interface.
-
-### content.js
-Injects the bookmark functionality into Bluesky pages, including adding bookmark buttons to posts and handling bookmark actions.
-
-### background.js
-Manages background tasks such as opening the bookmarks page and handling storage operations.
-
-### bookmarks.html
-The HTML structure for the full bookmarks page, displaying all saved bookmarks.
-
-### bookmarks.js
-Manages the functionality of the full bookmarks page, including rendering bookmarks, handling unbookmark actions, and opening bookmarked posts.
-
-### styles.css
-Contains shared styles for the extension, including styles for bookmark buttons, toasts, and the bookmarks page.
+- Added sorting functionality to the bookmarks page
+- Implemented a "Clear All" button to remove all bookmarks at once
+- Improved the layout of the bookmarks page
+- Added support for light theme in the Bluesky interface
+- Adjusted the position of Bluesky's feed tabs for better visibility
+- Improved error handling and user feedback
+- Enhanced the bookmark button placement and styling
 
 ## Development
 
@@ -82,6 +69,7 @@ To modify the extension:
 - If bookmarks aren't appearing, check the console for any error messages.
 - Ensure that the extension has the necessary permissions to access Bluesky pages.
 - If changes aren't reflected, try hard refreshing the page or reloading the extension.
+- Make sure you have enabled embedding for your posts to use the bookmarking feature.
 
 ## Contributing
 
